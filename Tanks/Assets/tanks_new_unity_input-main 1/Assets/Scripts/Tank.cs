@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class Tank : MonoBehaviour
 {
@@ -15,6 +16,11 @@ public class Tank : MonoBehaviour
     public GameObject Tanque;
     public Renderer chasis;
     public Renderer top;
+    int tankIndex;
+    public int counter;
+    public int counterKills;
+    public TextMeshProUGUI Player;
+    
 
    // public Material tank;
 
@@ -36,6 +42,8 @@ public class Tank : MonoBehaviour
         currHealth = maxHealth;
         chasis = GetComponent<Renderer>();
         top = GetComponent<Renderer>();
+        counter = 0;
+        counterKills = 0;
     }
 
     // Update is called once per frame
@@ -44,12 +52,12 @@ public class Tank : MonoBehaviour
         transform.Translate(tankSpeed * tankMovementSpeed.y * Time.deltaTime * Vector3.forward);
         transform.Rotate(tankRotSpeed * tankMovementSpeed.x * Time.deltaTime * Vector3.up);
 
-        if(currHealth <= 0)
-        {
-            SetInitialPos(spawnPosition);
-            currHealth = maxHealth;
-            healthBar.UpdateHealth(100f);
-        }
+        
+    }
+    public void setIndex(int index)
+    {
+        tankIndex = index;
+        Player.SetText($"P{index + 1}");
     }
 
     public void SetInitialPos(Vector3 position)
@@ -67,8 +75,9 @@ public class Tank : MonoBehaviour
         bullet.velocity = 50 * spawnBulletPos.forward;*/
         var bullet = Instantiate(bulletPrefab, spawnBulletPos.position, spawnBulletPos.rotation);
         bullet.GetComponent<Rigidbody>().AddForce(bullet.transform.forward * forcePunch);
-
-        
+        var bulletSc = bullet.GetComponent<Bullet>();
+        bulletSc.shootingTank = this.gameObject;
+        bulletSc.shootingTankIndex = tankIndex;
     }
 
     public void Move(InputAction.CallbackContext context)
@@ -77,22 +86,33 @@ public class Tank : MonoBehaviour
         //transform.Translate(10 * context.ReadValue<Vector2>().y * Time.deltaTime * Vector3.forward);
     }
 
-    public void TakeDamage(int damage)
+    //Funcion para recibir damage
+    public void TakeDamage(int damage, int killingTankIndex)
     {
+       
         currHealth -= damage;
         healthBar.UpdateHealth((float)currHealth / (float)maxHealth);
+
+        //reiniciando al tanque
+        if (currHealth <= 0)
+        {
+            currHealth = maxHealth;
+            healthBar.UpdateHealth(100f);
+
+            GameManager.instance.UpdateKills(killingTankIndex);
+            
+            SetInitialPos(spawnPosition);
+            counter++;
+        }
     }
 
-    /* private void OnCollisionEnter(Collision col)
-     {
-         if (col.gameObject.CompareTag("bullet"))
-         {
-             TakeDamage(10);
-             Destroy(col.gameObject);
-         }
-     }*/
+    //Funcion para sumar muertes ganadas
+    void winKill()
+    {
+        counterKills++;
+    }
 
-    private void OnTriggerEnter(Collider other)
+    /*private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("bullet"))
         {
@@ -101,6 +121,6 @@ public class Tank : MonoBehaviour
             
             
         }
-    }
+    }*/
 
 }
